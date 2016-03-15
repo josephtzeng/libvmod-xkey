@@ -519,16 +519,45 @@ purge(VRT_CTX, VCL_STRING key, VCL_INT do_soft)
 	return (i);
 }
 
+static VCL_INT
+purge_keys (VRT_CTX, VCL_STRING key, VCL_INT do_soft)
+{
+    int purged = 0;
+	const char *ep, *sp;
+    char subkey[100];
+
+    sp = key;
+
+    while (*sp != '\0') {
+        while (*sp == ' ')
+            sp++;
+        ep = sp;
+        while (*ep != '\0' && *ep != ' ')
+            ep++;
+        if (sp == ep)
+            break;
+
+        strncpy (subkey, sp, ep - sp);
+        subkey[ep - sp] = '\0';
+
+	    purged += purge(ctx, subkey, do_soft);
+        sp = ep;
+    }
+
+    return purged;
+}
+
+
 VCL_INT __match_proto__(td_xkey_purge)
 vmod_purge(VRT_CTX, VCL_STRING key)
 {
-	return (purge(ctx, key, 0));
+	return (purge_keys(ctx, key, 0));
 }
 
 VCL_INT __match_proto__(td_xkey_softpurge)
 vmod_softpurge(VRT_CTX, VCL_STRING key)
 {
-	return (purge(ctx, key, 1));
+	return (purge_keys(ctx, key, 1));
 }
 
 int __match_proto__(vmod_event_f)
